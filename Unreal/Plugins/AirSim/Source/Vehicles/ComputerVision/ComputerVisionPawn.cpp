@@ -11,21 +11,8 @@ AComputerVisionPawn::AComputerVisionPawn()
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
     camera_front_center_base_ = CreateDefaultSubobject<USceneComponent>(TEXT("camera_front_center_base_"));
-    camera_front_center_base_->SetRelativeLocation(FVector(0, 0, 0)); //center
-    camera_front_left_base_ = CreateDefaultSubobject<USceneComponent>(TEXT("camera_front_left_base_"));
-    camera_front_left_base_->SetRelativeLocation(FVector(0, -12.5, 0)); //left
-    camera_front_right_base_ = CreateDefaultSubobject<USceneComponent>(TEXT("camera_front_right_base_"));
-    camera_front_right_base_->SetRelativeLocation(FVector(0, 12.5, 0)); //right
-    camera_bottom_center_base_ = CreateDefaultSubobject<USceneComponent>(TEXT("camera_bottom_center_base_"));
-    camera_bottom_center_base_->SetRelativeLocation(FVector(0, 0, 0)); //right
-    camera_back_center_base_ = CreateDefaultSubobject<USceneComponent>(TEXT("camera_back_center_base_"));
-    camera_back_center_base_->SetRelativeLocation(FVector(0, 0, 0)); //right
-
+    camera_front_center_base_->SetRelativeLocation(FVector(0, 0, 0)); //front
     camera_front_center_base_->SetupAttachment(RootComponent);
-    camera_front_left_base_->SetupAttachment(RootComponent);
-    camera_front_right_base_->SetupAttachment(RootComponent);
-    camera_bottom_center_base_->SetupAttachment(RootComponent);
-    camera_back_center_base_->SetupAttachment(RootComponent);
 }
 
 void AComputerVisionPawn::NotifyHit(class UPrimitiveComponent* MyComp, class AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation,
@@ -42,27 +29,34 @@ void AComputerVisionPawn::initializeForBeginPlay()
     FActorSpawnParameters camera_spawn_params;
     camera_spawn_params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-    camera_spawn_params.Name = "camera_front_center";
-    camera_front_center_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, camera_transform, camera_spawn_params);
-    camera_front_center_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
+    camera_spawn_params.Name = "camera_front";
+    camera_front_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, camera_transform, camera_spawn_params);
+    camera_front_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
 
-    camera_spawn_params.Name = "camera_front_left";
-    camera_front_left_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, camera_transform, camera_spawn_params);
-    camera_front_left_->AttachToComponent(camera_front_left_base_, FAttachmentTransformRules::KeepRelativeTransform);
+    camera_spawn_params.Name = "camera_left";
+    camera_left_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
+        FTransform(FRotator(0, -90, 0), FVector::ZeroVector), camera_spawn_params);
+    camera_left_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
 
-    camera_spawn_params.Name = "camera_front_right";
-    camera_front_right_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, camera_transform, camera_spawn_params);
-    camera_front_right_->AttachToComponent(camera_front_right_base_, FAttachmentTransformRules::KeepRelativeTransform);
+    camera_spawn_params.Name = "camera_right";
+    camera_right_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
+        FTransform(FRotator(0, 90, 0), FVector::ZeroVector), camera_spawn_params);
+    camera_right_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
 
-    camera_spawn_params.Name = "camera_bottom_center";
-    camera_bottom_center_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
-        FTransform(FRotator(-90, 0, 0), FVector::ZeroVector), camera_spawn_params);
-    camera_bottom_center_->AttachToComponent(camera_bottom_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
+    camera_spawn_params.Name = "camera_up";
+    camera_up_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
+        FTransform(FRotator(90.f, 0, 0), FVector::ZeroVector), camera_spawn_params);
+    camera_up_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
 
-    camera_spawn_params.Name = "camera_back_center";
-    camera_back_center_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
-        FTransform(FRotator(0, -180, 0), FVector::ZeroVector), camera_spawn_params);
-    camera_back_center_->AttachToComponent(camera_back_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
+    camera_spawn_params.Name = "camera_down";
+    camera_down_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
+        FTransform(FRotator(-90.f, 0, 0), FVector::ZeroVector), camera_spawn_params);
+    camera_down_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
+
+    camera_spawn_params.Name = "camera_back";
+    camera_back_ = this->GetWorld()->SpawnActor<APIPCamera>(pip_camera_class_, 
+        FTransform(FRotator(0, -180.f, 0), FVector::ZeroVector), camera_spawn_params);
+    camera_back_->AttachToComponent(camera_front_center_base_, FAttachmentTransformRules::KeepRelativeTransform);
 
     manual_pose_controller_ = NewObject<UManualPoseController>(this, "ComputerVision_ManualPoseController");
     manual_pose_controller_->initializeForPlay();
@@ -72,38 +66,37 @@ void AComputerVisionPawn::initializeForBeginPlay()
 const common_utils::UniqueValueMap<std::string, APIPCamera*> AComputerVisionPawn::getCameras() const
 {
     common_utils::UniqueValueMap<std::string, APIPCamera*> cameras;
-    cameras.insert_or_assign("front_center", camera_front_center_);
-    cameras.insert_or_assign("front_right", camera_front_right_);
-    cameras.insert_or_assign("front_left", camera_front_left_);
-    cameras.insert_or_assign("bottom_center", camera_bottom_center_);
-    cameras.insert_or_assign("back_center", camera_back_center_);
+    cameras.insert_or_assign("front", camera_front_);
+    cameras.insert_or_assign("left", camera_left_);
+    cameras.insert_or_assign("right", camera_right_);
+    cameras.insert_or_assign("up", camera_up_);
+    cameras.insert_or_assign("down", camera_down_);
+    cameras.insert_or_assign("back", camera_back_);
 
 
-    cameras.insert_or_assign("0", camera_front_center_);
-    cameras.insert_or_assign("1", camera_front_right_);
-    cameras.insert_or_assign("2", camera_front_left_);
-    cameras.insert_or_assign("3", camera_bottom_center_);
-    cameras.insert_or_assign("4", camera_back_center_);
+    cameras.insert_or_assign("0", camera_front_);
+    cameras.insert_or_assign("1", camera_left_);
+    cameras.insert_or_assign("2", camera_right_);
+    cameras.insert_or_assign("3", camera_up_);
+    cameras.insert_or_assign("4", camera_down_);
+    cameras.insert_or_assign("5", camera_back_);
 
-    cameras.insert_or_assign("fpv", camera_front_center_);
-    cameras.insert_or_assign("", camera_front_center_);
+    cameras.insert_or_assign("fpv", camera_front_);
+    cameras.insert_or_assign("", camera_front_);
 
     return cameras;
 }
 
 void AComputerVisionPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    camera_front_center_ = nullptr;
-    camera_front_left_ = nullptr;
-    camera_front_right_ = nullptr;
-    camera_bottom_center_ = nullptr;
-    camera_back_center_ = nullptr;
+    camera_front_ = nullptr;
+    camera_left_ = nullptr;
+    camera_right_ = nullptr;
+    camera_up_ = nullptr;
+    camera_down_ = nullptr;
+    camera_back_ = nullptr;
 
     camera_front_center_base_ = nullptr;
-    camera_front_left_base_ = nullptr;
-    camera_front_right_base_ = nullptr;
-    camera_bottom_center_base_ = nullptr;
-    camera_back_center_base_ = nullptr;
 
     manual_pose_controller_ = nullptr;
 }
