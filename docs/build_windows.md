@@ -39,7 +39,10 @@ Once AirSim is set up by following above steps, you can,
 
 1. Double click on .sln file to load the Blocks project in `Unreal\Environments\Blocks` (or .sln file in your own [custom](unreal_custenv.md) Unreal project). If you don't see .sln file then you probably haven't completed steps in Build Unreal Project section above.
 2. Select your Unreal project as Start Up project (for example, Blocks project) and make sure Build config is set to "Develop Editor" and x64.
-3. After Unreal Editor loads, press Play button. Tip: go to 'Edit->Editor Preferences', in the 'Search' box type 'CPU' and ensure that the 'Use Less CPU when in Background' is unchecked.
+3. After Unreal Editor loads, press Play button. 
+
+!!! tip
+    Go to 'Edit->Editor Preferences', in the 'Search' box type 'CPU' and ensure that the 'Use Less CPU when in Background' is unchecked.
 
 See [Using APIs](apis.md) and [settings.json](settings.md) for various options available.
 
@@ -78,6 +81,10 @@ And add this Compiler version setting:
   </WindowsPlatform>
 </Configuration>
 ```
+
+### I get error: 'where' is not recognized as an internal or external command
+
+You have to add `C:\WINDOWS\SYSTEM32` to your PATH enviroment variable.
 
 ### I'm getting error `<MyProject> could not be compiled. Try rebuilding from source manually`
 
